@@ -73,7 +73,7 @@ echo 'source $(brew --prefix)/opt/asdf/asdf.sh' >> ${HOME}/.zshrc
 
 **NOTE**: It may be necessary to run `source ${HOME}/.bashrc` or `source ${HOME}/.zshrc`, depending on the shell, in order run use the runtimes and developer tools installed by ASDF VM.  
 
-### 4. Install ASDF Python Plugin
+### 4. Install ASDF VM Python Plugin
 
 To install the Python plugin run the following command:  
 
@@ -81,7 +81,7 @@ To install the Python plugin run the following command:
 asdf plugin-add python
 ```
 
-**Troubleshooting**: In the event that you may already have these plugins installed, you may need to update them to ensure that you'll be able to install the runtimes properly.  
+In the event that you may already have these plugins installed, you may need to update them to ensure that you'll be able to install the runtimes properly.  
 
 Update them with the following command:  
 
@@ -139,9 +139,168 @@ pip3 install virtualenv
 
 ## Setup Development Environment (Windows)
 
-***Coming Soon**: As of now this project doesn't support windows, but it shall soon.*
+### 1. Enable the [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/about) Feature
+
+Windows Subsystem for Linux is a virtual machine to run Linux inside Windows.  
+
+Enable it with the following PowerShell command (in Administrator mode):  
+
+```ps1
+Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -norestart
+Restart-Computer
+```
+
+**NOTE**: You'll need to restart your system or else you cannot move on to the next steps.  
+
+### 2. Download and Install the Linux Distro on WSL (Debian 9 Stretch)
+
+Download the Debian installer with the following PowerShell command:  
+
+```ps1
+Invoke-WebRequest -Uri https://aka.ms/wsl-debian-gnulinux -OutFile $env:USERPROFILE\Debian.appx -UseBasicParsing
+Expand-Archive $env:USERPROFILE\Debian.zip $env:USERPROFILE\Debian
+```
+
+**NOTE**: The `Debian.appx` file is a very large file and it may take some time to download.  
+
+Install the Debian on WSL by running the installer with the following PowerShell command:  
+
+```ps1
+& $env:USERPROFILE\Debian\debian.exe
+```
+
+**NOTE**: You'll be prompted to enter a new UNIX username and password.  You can choose whatever you want, it needs not match your Windows username and password.  
+**NOTE**: You can invoke the WSL linux terminal with the following powershell command: `wsl`.  
+
+### 3. Install all the needed tools in WSL
+
+Activate the `wsl` linux terminal if you have not done so, then run the following Linux shell command.  
+
+```ps1
+wsl
+```
+
+#### 3.1 Update the Debian Package Metadata
+
+Before you can install additional software on WSL/Debian, you'll need to download the package metadata.  
+
+Run the following command to update the Debian package manager:  
+
+```sh
+sudo apt update
+```
+
+**NOTE**: Whenever you run a `sudo` command in Linux you'll usually be prompted to enter you UNIX password that you set during installation on Linux on WSL.  
+
+#### 3.2 Install Linuxbrew
+
+Linux brew is another command line package manager similar to Homebrew on Mac.  
+
+Run the following commands to install Linuxbrew and update the `.profile` file for Linuxbrew:
+
+```sh
+sudo apt install -y curl git build-essential
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/Linuxbrew/install/master/install.sh)" < /dev/null
+echo '# Adding Linuxbrew path' >> ${HOME}/.profile
+echo 'eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)' >> ${HOME}/.profile
+```
+
+**NOTE**:  You may need to resource the `.profile` file in order to run the `brew` command.  If the `brew` command isn't available run `source ${HOME}/.profile`.  
+**NOTE**: Windows firewall may prompt you to allow certain dependencies to communicate on networks.  
+
+#### 3.3 Install ASDF VM using Linuxbrew
+
+Run the following commands to install ASDF VM and update the `.profile` file for ASDF VM:  
+
+```sh
+brew install asdf
+echo '# Adding asdf-vm (via Homebrew) paths' >> ${HOME}/.profile
+echo 'source $(brew --prefix)/opt/asdf/asdf.sh' >> ${HOME}/.profile
+```
+
+**NOTE**: This step may take a while to complete.  
+**NOTE**: You may need to resource the `.profile` file in order to run the `brew` command.  If the `brew` command isn't available run `source ${HOME}/.profile`.  
+**NOTE**: Windows firewall may prompt you to allow certain dependencies to communicate on networks.  
+
+#### 3.4 Install ASDF VM Python Plugin
+
+To install the Python plugin run the following command:  
+
+```sh
+sudo apt install -y build-essential python-dev libncursesw5-dev libgdbm-dev libc6-dev zlib1g-dev libbz2-dev readline-common libreadline-dev libsqlite3-dev tk-dev libssl-dev libffi-dev xz-utils
+asdf plugin-add python
+```
+
+**NOTE**: You may get the following message: `WARNING: The Python readline extension was not compiled. Missing the GNU readline lib?`, this is ok.  You won't be needing this `readline` extension.  
+
+In the event that you may already have these plugins installed, you may need to update them to ensure that you'll be able to install the runtimes properly.  
+
+Update them with the following command:  
+
+```sh
+asdf plugin-update --all
+```
+
+### 4. Clone or Download the Project and Install the Runtimes
+
+Run the following PowerShell commands to clone enter into the project's directory:  
+
+```ps1
+wsl git clone https://github.com/BennyHoward/neural_network_from_scratch.git
+chdir neural_network_from_scratch
+```
+
+Run the following in the WSL terminal, to install all the runtimes needed by the project:  
+
+```sh
+asdf install
+```
+
+**NOTE**: This will take a while, you'll need to be patient for this step.  
+**NOTE**: This command will install the runtimes and versions defined in the `.tool-versions` file in this project.  So be sure to be in this project's directory when running `asdf install`.  
+
+Then install global packages and modules for the installed runtimes.  
+
+You should upgrade the `pip` package manager for Python3 and globally install the `virtualenv` module for Python3.  
+
+Run the following command to update the package manager and install the global module:
+
+```sh
+pip3 install --upgrade pip
+pip3 install virtualenv
+```
+
+**NOTE**: Notice how we didn't have `pip3` this time.  This is because the virtual environment was created with Python3, so we're running in a Python3 environment with no risk of accidentally using Python2.  
+**NOTE**: To be certain you're targeting the exact runtime specified in this project's `.tool-versions` file, be sure to run this command when in this project's directory.  
+
+### 5. Install [Chocolatey](https://chocolatey.org/packages) Package Manager and use it to install Visual Studio Code and Github Desktop (Optionals)
+
+#### 5.1 Install Chocolatey
+
+Chocolaty is a command line tool and package manager for Windows.  
+
+Install with the following PowerShell command (in Administrator mode):  
+
+```ps1
+Set-ExecutionPolicy RemoteSigned -scope Process -Force
+iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+```
+
+**NOTE**: The `Set-ExecutionPolicy ...` command allows the Chocolaty installation script to run.  
+
+#### 5.2 Install Visual Studio Code and GitHub Desktop with Chocolatey
+
+```ps1
+choco install -y vscode github-desktop
+```
 
 ## Bootstrapping the Project
+
+<hr>
+
+**NOTE**: If you're running Windows, remember ALL of the following commands MUST be run in WSL.  Nothing in this section uses PowerShell or any other Windows specific command lines.  
+
+<hr>
 
 The following steps will show you how to bootstrap the project.  
 
@@ -170,6 +329,12 @@ pip install -r requirements.txt
 
 ## Usage
 
+<hr>
+
+**NOTE**: If you're running Windows, remember ALL of the following commands MUST be run in WSL.  Nothing in this section uses PowerShell or any other Windows specific command lines.  
+
+<hr>
+
 ### 1. Activate Python Virtual Environment, If You Haven't Done So Already
 
 ```sh
@@ -181,7 +346,7 @@ source ./venv/bin/activate
 ### 2. Run the Jupyter Notebook
 
 ```sh
-jupyter notebook
+jupyter notebook --port 8889
 ```
 
 Server will be running on [http://localhost:8889/](http://localhost:8889/).  
